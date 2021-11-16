@@ -12,9 +12,8 @@ extern "C" void app_main()
     ESP_LOGI("Boot", "Starting");
     auto tempSensor = Max31865(12, 13, 14, 15);
     max31865_config_t tempConfig = {};
-    tempConfig.autoConversion = true;
     tempConfig.vbias = true;
-    tempConfig.filter = Max31865Filter::Hz50;
+    tempConfig.filter = Max31865Filter::Hz60;
     tempConfig.nWires = Max31865NWires::Three;
     max31865_rtd_config_t rtdConfig = {};
     rtdConfig.nominal = 100.0f;
