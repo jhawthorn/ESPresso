@@ -6,13 +6,10 @@
 
 #include "sdkconfig.h"
 
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
 #include "nvs_flash.h"
-
 #include "Max31865.h"
+
+#include "espresso.h"
 
 #define MAX31865_MISO 12
 #define MAX31865_MOSI 13
@@ -56,10 +53,6 @@ void temperature_loop()
         ESP_LOGI("Temperature", "%.2f C", temp);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
-}
-
-void wifi_init_sta()
-{
 }
 
 extern "C" void app_main()
