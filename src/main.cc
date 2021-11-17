@@ -6,6 +6,8 @@
 
 #include "sdkconfig.h"
 
+#include "esp_event.h"
+#include "esp_netif.h"
 #include "nvs_flash.h"
 #include "Max31865.h"
 
@@ -57,7 +59,9 @@ void temperature_loop()
 
 extern "C" void app_main()
 {
-    ESP_LOGI("Boot", "Starting");
+    ESP_LOGI("BOOT", "Startup..");
+    ESP_LOGI("BOOT", "Free memory: %d bytes", esp_get_free_heap_size());
+    ESP_LOGI("BOOT", "IDF version: %s", esp_get_idf_version());
 
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -71,6 +75,8 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     wifi_init_sta();
+
+    mqtt_init();
 
     temperature_init();
 }

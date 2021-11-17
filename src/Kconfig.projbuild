@@ -17,4 +17,16 @@ menu "ESPresso Configuration"
         default 5
         help
             Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+
+    config MQTT_BROKER_URL
+        string "MQTT Broker URL"
+        default "mqtt://mqtt.eclipseprojects.io"
+        help
+            URL for the MQTT broker
+
+    config MQTT_TOPIC_FORMAT
+        string "MQTT Topic Prefix"
+        default "home/espresso/%s"
+        help
+            A printf-style
 endmenu
