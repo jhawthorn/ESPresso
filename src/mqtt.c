@@ -96,14 +96,28 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
+static esp_mqtt_client_handle_t client;
+
 void mqtt_init(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
         .uri = CONFIG_MQTT_BROKER_URL,
     };
 
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    client = esp_mqtt_client_init(&mqtt_cfg);
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
+}
+
+void mqtt_publishf(const char *topic, float value) {
+    char full_topic[128];
+    char formatted_value[128];
+
+    snprintf(full_topic, 128, CONFIG_MQTT_TOPIC_FORMAT, topic);
+    snprintf(formatted_value, 128, "%.2f", value);
+
+    int qos = 0;
+    int retain = 0;
+    esp_mqtt_client_publish(client, full_topic, formatted_value, 0, qos, retain);
 }

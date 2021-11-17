@@ -41,7 +41,7 @@ void temperature_init()
     rtdConfig.ref = 430.0f;
 
     ESP_ERROR_CHECK(tempSensor.begin(tempConfig));
-    ESP_ERROR_CHECK(tempSensor.setRTDThresholds(0x2000, 0x2500));
+    //ESP_ERROR_CHECK(tempSensor.setRTDThresholds(0x2000, 0x2500));
 }
 
 void temperature_loop()
@@ -53,6 +53,7 @@ void temperature_loop()
         ESP_ERROR_CHECK(tempSensor.getRTD(&rtd, &fault));
         float temp = Max31865::RTDtoTemperature(rtd, rtdConfig);
         ESP_LOGI("Temperature", "%.2f C", temp);
+	mqtt_publishf("temperature", temp);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
@@ -75,8 +76,8 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     wifi_init_sta();
-
     mqtt_init();
-
     temperature_init();
+
+    temperature_loop();
 }
