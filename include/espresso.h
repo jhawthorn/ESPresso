@@ -7,6 +7,8 @@ void mqtt_init(void);
 
 void mqtt_publishf(const char *topic, float value);
 
+void temperature_target_set(float value);
+
 #ifdef __cplusplus
 }
 #endif

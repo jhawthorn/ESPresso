@@ -30,6 +30,8 @@ static Max31865 tempSensor(
 max31865_config_t tempConfig = {};
 max31865_rtd_config_t rtdConfig = {};
 
+float target_temperature = 94;
+
 void temperature_init()
 {
     ESP_LOGI("Temperature", "Initializing");
@@ -40,8 +42,14 @@ void temperature_init()
     rtdConfig.nominal = 100.0f;
     rtdConfig.ref = 430.0f;
 
+    mqtt_publishf("target", target_temperature);
+
     ESP_ERROR_CHECK(tempSensor.begin(tempConfig));
     //ESP_ERROR_CHECK(tempSensor.setRTDThresholds(0x2000, 0x2500));
+}
+
+float temperature_target_set(float val) {
+    target_temperature = val;
 }
 
 void temperature_loop()
@@ -77,6 +85,7 @@ extern "C" void app_main()
 
     wifi_init_sta();
     mqtt_init();
+
     temperature_init();
 
     temperature_loop();
