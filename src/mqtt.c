@@ -20,7 +20,13 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
+#include "espresso.h"
+
 static const char *TAG = "MQTT";
+
+static const char *TOPIC_TARGET = "target";
+
+static esp_mqtt_client_handle_t client;
 
 static void log_error_if_nonzero(const char *message, int error_code)
 {
@@ -29,7 +35,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
     }
 }
 
-static void mqtt_subscribe(const char *topic) {
+static void mqtt_subscribe(esp_mqtt_client_handle_t client, const char *topic) {
     char full_topic[128];
     snprintf(full_topic, 128, CONFIG_MQTT_TOPIC_FORMAT, topic);
 
@@ -45,7 +51,16 @@ static int event_matches(esp_mqtt_event_handle_t event, const char *topic) {
 }
 
 static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
-    if (event_matches(event, "target")) {
+    char buf[32];
+    if (event->data_len >= sizeof(buf))
+        return;
+    memcpy(buf, event->data, event->data_len);
+    buf[event->data_len] = '\0';
+
+    float f_data = atof(buf);
+
+    if (event_matches(event, TOPIC_TARGET)) {
+        temperature_target_set(f_data);
     }
 }
 
@@ -64,10 +79,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
+
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+
+        mqtt_subscribe(client, TOPIC_TARGET);
 
         //msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
         //ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
@@ -100,7 +117,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
 
-	mqtt_receive_data(event);
+        mqtt_receive_data(event);
 
         break;
     case MQTT_EVENT_ERROR:
@@ -118,8 +135,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     }
 }
-
-static esp_mqtt_client_handle_t client;
 
 void mqtt_init(void)
 {

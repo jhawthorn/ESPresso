@@ -38,7 +38,7 @@ void temperature_init()
 
     tempConfig.vbias = true;
     tempConfig.filter = Max31865Filter::Hz60;
-    tempConfig.nWires = Max31865NWires::Three;
+    tempConfig.nWires = Max31865NWires::Two;
     rtdConfig.nominal = 100.0f;
     rtdConfig.ref = 430.0f;
 
@@ -48,7 +48,7 @@ void temperature_init()
     //ESP_ERROR_CHECK(tempSensor.setRTDThresholds(0x2000, 0x2500));
 }
 
-float temperature_target_set(float val) {
+void temperature_target_set(float val) {
     target_temperature = val;
 }
 
