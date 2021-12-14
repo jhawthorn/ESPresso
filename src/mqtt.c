@@ -45,15 +45,22 @@ static void mqtt_subscribe(esp_mqtt_client_handle_t client, const char *topic) {
 
 static int event_matches(esp_mqtt_event_handle_t event, const char *topic) {
     char full_topic[128];
-    snprintf(full_topic, 128, CONFIG_MQTT_TOPIC_FORMAT, topic);
 
-    return event->topic_len == strlen(full_topic) && memcmp(event->topic, full_topic, event->topic_len);
+    int len = snprintf(full_topic, 128, CONFIG_MQTT_TOPIC_FORMAT, topic);
+    if (len <= 0) {
+        ESP_LOGE(TAG, "snprintf error");
+        return 0;
+    }
+
+    return event->topic_len == len && !memcmp(event->topic, full_topic, len);
 }
 
 static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
     char buf[32];
-    if (event->data_len >= sizeof(buf))
+    if (event->data_len >= sizeof(buf)) {
+        ESP_LOGW(TAG, "data too long");
         return;
+    }
     memcpy(buf, event->data, event->data_len);
     buf[event->data_len] = '\0';
 
@@ -61,6 +68,8 @@ static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
 
     if (event_matches(event, TOPIC_TARGET)) {
         temperature_target_set(f_data);
+    } else {
+        ESP_LOGW(TAG, "unknown topic");
     }
 }
 
@@ -148,14 +157,17 @@ void mqtt_init(void)
     esp_mqtt_client_start(client);
 }
 
-void mqtt_publishf(const char *topic, float value) {
+void mqtt_publishs(const char *topic, const char *value) {
     char full_topic[128];
-    char formatted_value[128];
-
     snprintf(full_topic, 128, CONFIG_MQTT_TOPIC_FORMAT, topic);
-    snprintf(formatted_value, 128, "%.2f", value);
 
     int qos = 0;
     int retain = 0;
-    esp_mqtt_client_publish(client, full_topic, formatted_value, 0, qos, retain);
+    esp_mqtt_client_publish(client, full_topic, value, 0, qos, retain);
+}
+
+void mqtt_publishf(const char *topic, float value) {
+    char formatted_value[128];
+    snprintf(formatted_value, 128, "%.2f", value);
+    mqtt_publishs(topic, formatted_value);
 }

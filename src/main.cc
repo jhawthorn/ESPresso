@@ -22,6 +22,13 @@
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
+// Used as threshold to determine RTD error state
+// Machine will not work if freezing
+#define MIN_TEMP (0)
+// Safety thermostat trips at 165
+#define MAX_TEMP (165)
+
+
 static Max31865 tempSensor(
         MAX31865_MISO,
         MAX31865_MOSI,
@@ -45,23 +52,46 @@ void temperature_init()
     mqtt_publishf("target", target_temperature);
 
     ESP_ERROR_CHECK(tempSensor.begin(tempConfig));
-    //ESP_ERROR_CHECK(tempSensor.setRTDThresholds(0x2000, 0x2500));
 }
 
 void temperature_target_set(float val) {
+    ESP_LOGI("Temperature", "Setting target: %f", val);
     target_temperature = val;
+}
+
+void heating_state_set(bool on) {
+    if (on) {
+        mqtt_publishs("state", "on");
+        ESP_LOGI("Boiler", "on");
+    } else {
+        mqtt_publishs("state", "off");
+        ESP_LOGI("Boiler", "off");
+    }
 }
 
 void temperature_loop()
 {
     ESP_LOGI("Temperature", "Starting loop");
+    vTaskDelay(pdMS_TO_TICKS(500));
+
     while (true) {
         uint16_t rtd;
         Max31865Error fault = Max31865Error::NoError;
         ESP_ERROR_CHECK(tempSensor.getRTD(&rtd, &fault));
         float temp = Max31865::RTDtoTemperature(rtd, rtdConfig);
-        ESP_LOGI("Temperature", "%.2f C", temp);
-	mqtt_publishf("temperature", temp);
+
+        if (fault != Max31865Error::NoError) {
+            ESP_LOGE("Temperature", "Status: %s", Max31865::errorToString(fault));
+            heating_state_set(false);
+        } else if (temp < MIN_TEMP || temp > MAX_TEMP) {
+            ESP_LOGE("Temperature", "Outside of threshold: %f", temp);
+            heating_state_set(false);
+        } else {
+            ESP_LOGI("Temperature", "%.2f C", temp);
+            mqtt_publishf("temperature", temp);
+            heating_state_set(temp < target_temperature);
+        }
+
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
