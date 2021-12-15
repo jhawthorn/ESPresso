@@ -25,6 +25,7 @@
 static const char *TAG = "MQTT";
 
 static const char *TOPIC_TARGET = "target";
+static const char *TOPIC_UPDATE = "update_url";
 
 static esp_mqtt_client_handle_t client;
 
@@ -55,19 +56,36 @@ static int event_matches(esp_mqtt_event_handle_t event, const char *topic) {
     return event->topic_len == len && !memcmp(event->topic, full_topic, len);
 }
 
-static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
+static bool parse_float(const char *data, int data_len, float *ret) {
     char buf[32];
-    if (event->data_len >= sizeof(buf)) {
-        ESP_LOGW(TAG, "data too long");
-        return;
+    if (data_len >= sizeof(buf)) {
+        ESP_LOGW(TAG, "received data too long for float");
+        return 1;
     }
-    memcpy(buf, event->data, event->data_len);
-    buf[event->data_len] = '\0';
+    memcpy(buf, data, data_len);
+    buf[data_len] = '\0';
 
-    float f_data = atof(buf);
+    *ret = atof(buf);
+
+    return 0;
+}
+
+static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
 
     if (event_matches(event, TOPIC_TARGET)) {
+        float f_data = 0;
+        if (!parse_float(event->data, event->data_len, &f_data))
+            return;
+
         temperature_target_set(f_data);
+    } else if (event_matches(event, TOPIC_UPDATE)) {
+        char buf[128];
+        if (event->data_len >= sizeof(buf)) {
+            ESP_LOGW(TAG, "received update URL too long");
+            return;
+        }
+
+        upgrade_firmware_ota(buf);
     } else {
         ESP_LOGW(TAG, "unknown topic");
     }
@@ -94,18 +112,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
         mqtt_subscribe(client, TOPIC_TARGET);
+        mqtt_subscribe(client, TOPIC_UPDATE);
 
-        //msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
-        //ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
-
-        //msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
-        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        //msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
-
-        //msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-        //ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");

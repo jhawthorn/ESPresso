@@ -10,6 +10,9 @@ void mqtt_publishs(const char *topic, const char *value);
 
 void temperature_target_set(float value);
 
+// upgrade.c
+int upgrade_firmware_ota(const char *url);
+
 #ifdef __cplusplus
 }
 #endif
