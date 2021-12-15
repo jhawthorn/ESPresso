@@ -29,3 +29,7 @@ jobs:
         pip install --upgrade platformio
     - name: Run PlatformIO
       run: pio run
+    - uses: actions/upload-artifact@v2
+      with:
+        name: esp32-firmware.bin
+        path: .pio/build/esp32dev/firmware.bin
