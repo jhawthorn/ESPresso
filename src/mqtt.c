@@ -84,6 +84,8 @@ static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
             ESP_LOGW(TAG, "received update URL too long");
             return;
         }
+        memcpy(buf, event->data, event->data_len);
+        buf[event->data_len] = 0;
 
         upgrade_firmware_ota(buf);
     } else {
