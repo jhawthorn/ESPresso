@@ -59,13 +59,23 @@ void temperature_target_set(float val) {
     target_temperature = val;
 }
 
+#define PIN_HEAT GPIO_NUM_16
+#define PIN_HEAT_ON 1
+#define PIN_HEAT_OFF (!PIN_HEAT_ON)
+
 void heating_state_set(bool on) {
     if (on) {
         mqtt_publishs("state", "on");
         ESP_LOGI("Boiler", "on");
+
+	gpio_set_direction(PIN_HEAT, GPIO_MODE_OUTPUT);
+	gpio_set_level(PIN_HEAT, PIN_HEAT_ON);
     } else {
         mqtt_publishs("state", "off");
         ESP_LOGI("Boiler", "off");
+
+	//gpio_set_level(PIN_HEAT, PIN_HEAT_OFF);
+	gpio_set_direction(PIN_HEAT, GPIO_MODE_DISABLE);
     }
 }
 
