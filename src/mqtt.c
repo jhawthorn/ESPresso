@@ -60,14 +60,14 @@ static bool parse_float(const char *data, int data_len, float *ret) {
     char buf[32];
     if (data_len >= sizeof(buf)) {
         ESP_LOGW(TAG, "received data too long for float");
-        return 1;
+        return 0;
     }
     memcpy(buf, data, data_len);
     buf[data_len] = '\0';
 
     *ret = atof(buf);
 
-    return 0;
+    return 1;
 }
 
 static void mqtt_receive_data(esp_mqtt_event_handle_t event) {
