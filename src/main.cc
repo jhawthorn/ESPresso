@@ -81,8 +81,13 @@ void heating_state_set(bool on) {
 
 void temperature_loop()
 {
-    ESP_LOGI("Temperature", "Starting loop");
     vTaskDelay(pdMS_TO_TICKS(1000));
+
+    ESP_LOGI("Temperature", "Starting loop");
+
+    TickType_t lastWakeTime;
+    const TickType_t frequency = pdMS_TO_TICKS(1000);
+    lastWakeTime = xTaskGetTickCount();
 
     while (true) {
         uint16_t rtd;
@@ -102,7 +107,7 @@ void temperature_loop()
             heating_state_set(temp < target_temperature);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelayUntil(&lastWakeTime, frequency);
     }
 }
 
