@@ -28,6 +28,7 @@
 // Safety thermostat trips at 165
 #define MAX_TEMP (165)
 
+#define STACK_SIZE 2048
 
 static Max31865 tempSensor(
         MAX31865_MISO,
@@ -79,7 +80,7 @@ void heating_state_set(bool on) {
     }
 }
 
-void temperature_loop()
+void temperature_loop(void *pvParameters)
 {
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -133,5 +134,5 @@ extern "C" void app_main()
 
     temperature_init();
 
-    temperature_loop();
+    xTaskCreate(temperature_loop, "temperature", STACK_SIZE, NULL, 5, NULL);
 }
